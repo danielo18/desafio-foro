@@ -17,4 +17,9 @@ public class Curso {
     private Categoria categoria;
 
 
+    public Curso actualizar(Curso curso) {
+        this.categoria=curso.getCategoria();
+        this.curso=curso.getCurso();
+        return this;
+    }
 }

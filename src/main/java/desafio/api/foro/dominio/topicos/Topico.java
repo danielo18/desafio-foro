@@ -62,4 +62,26 @@ public class Topico {
     public Curso getCurso() {
         return curso;
     }
+
+    public void actualizar(DatosTopico datosTopico) {
+        if(datosTopico.titulo()!=null){
+            this.titulo= datosTopico.titulo();
+        }
+        if(datosTopico.mensaje()!=null){
+            this.mensaje= datosTopico.mensaje();
+        }
+        if(datosTopico.fecha()!=null){
+            this.fecha=datosTopico.fecha();
+        }
+        if(datosTopico.autor()!=null){
+            this.autor= datosTopico.autor();
+        }
+        if(datosTopico.curso()!=null){
+            this.curso=curso.actualizar(datosTopico.curso());
+        }
+    }
+
+    public void eliminar() {
+        this.status=0;
+    }
 }
