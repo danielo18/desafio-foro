@@ -1,9 +1,8 @@
 package desafio.api.foro.controller;
 
-import desafio.api.foro.dominio.topicos.DatosRespuestaTopico;
-import desafio.api.foro.dominio.topicos.DatosTopico;
-import desafio.api.foro.dominio.topicos.Topico;
-import desafio.api.foro.dominio.topicos.TopicoRepository;
+import desafio.api.foro.dominio.topicos.*;
+import desafio.api.foro.infra.errores.ValidacionDeIntegridad;
+import desafio.api.foro.infra.errores.ValidarDuplicidad;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,14 +19,21 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/topicos")
 public class TopicoController {
+    @Autowired
+    ValidarTopicoService servicio;
 
     @Autowired
     private TopicoRepository topicoRepository;
 
     @PostMapping
     public ResponseEntity<DatosRespuestaTopico> registrarTopico(@RequestBody @Valid DatosTopico datosTopico,
-                                                                UriComponentsBuilder uriComponentsBuilder) {
+                                                                UriComponentsBuilder uriComponentsBuilder) throws ValidarDuplicidad {
+
         System.out.println(datosTopico);
+        servicio.validarDatos(datosTopico);
+
+        servicio.validarDuplicidad(datosTopico.titulo(),datosTopico.mensaje());
+
         Topico topico = topicoRepository.save(new Topico(datosTopico));
         DatosRespuestaTopico datosRespuestaTopico = new DatosRespuestaTopico(topico.getId(), topico.getAutor(), topico.getTitulo(), topico.getMensaje(),topico.getCurso().getCurso(),String.valueOf(topico.getCurso().getCategoria()),topico.getStatus(), topico.getFecha());
 
@@ -43,12 +49,20 @@ public class TopicoController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Optional<DatosRespuestaTopico>> topicoDetallado(@PathVariable Long id){
+        if(!topicoRepository.findById(id).isPresent()){
+            throw new ValidacionDeIntegridad("este id de topico no fue encontrado");
+        }
+
         return ResponseEntity.ok(topicoRepository.findById(id).map(DatosRespuestaTopico::new));
     }
 
     @PutMapping("/{id}")
     @Transactional
     public ResponseEntity<Optional<DatosRespuestaTopico>> actualizarTopico(@RequestBody @Valid DatosTopico datosTopico, @PathVariable Long id ){
+        if(!topicoRepository.findById(id).isPresent()){
+            throw new ValidacionDeIntegridad("este id de topico no fue encontrado");
+        }
+
         Topico topico= topicoRepository.getReferenceById(id);
         topico.actualizar(datosTopico);
         return ResponseEntity.ok(Optional.of(new DatosRespuestaTopico(topico.getId(), topico.getAutor(),
@@ -59,8 +73,12 @@ public class TopicoController {
     @DeleteMapping("/{id}")
     @Transactional
     public ResponseEntity eliminarTopico(@PathVariable Long id){
-        Topico topico= topicoRepository.getReferenceById(id);
-        topico.eliminar();
+        if(!topicoRepository.findById(id).isPresent()){
+            throw new ValidacionDeIntegridad("este id de topico no fue encontrado");
+        }
+            Topico topico = topicoRepository.getReferenceById(id);
+            topico.eliminar();
+
         return ResponseEntity.noContent().build();
     }
 }
